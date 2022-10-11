@@ -1,0 +1,12 @@
+displayName: headerauthentication
+type: middleware
+iconPath: .assets/icon.png
+
+import: github.com/omar-shrbajy-arive/headerauthentication
+
+summary: 'Authorize requests with header value'
+
+testData:
+  Header:
+    name: X-API-KEY
+    key: '123test'

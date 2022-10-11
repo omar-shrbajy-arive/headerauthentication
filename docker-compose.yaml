@@ -1,0 +1,65 @@
+# docker-compose.yaml for Traefik Proxy local plugin development
+version: "3.3"
+networks:
+  traefik-proxy:
+volumes:
+  traefik-proxy:
+
+services:
+  traefik-proxy:
+    build:
+      context: .
+      args:
+        PLUGIN_MODULE: ${PLUGIN_MODULE}
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-proxy"
+      ## Entrypoints:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.traefik.address=:9000"
+      ## Automatically redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      ## ACME TLS config:
+      - "--certificatesresolvers.default.acme.storage=/data/acme.json"
+      ## Uncomment for production TLS certificates (Let's Encrypt):
+      # - "--certificatesresolvers.default.acme.tlschallenge=true"
+      # - "--certificatesresolvers.default.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
+      # - "--certificatesresolvers.default.acme.email=${ACME_CA_EMAIL}"
+      ## Enable Dashboard available only from the docker localhost:9000
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      ## Enable local plugins:
+      - "--experimental.localPlugins.${PLUGIN_NAME}.moduleName=${PLUGIN_MODULE}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - "traefik-proxy:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  ## The whoami container will run the demo plugin for testing purposes:
+  whoami:
+    image: traefik/whoami
+    networks:
+      - traefik-proxy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`${WHOAMI_TRAEFIK_HOST}`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      # Configure the plugin as a new middleware:
+      - "traefik.http.routers.whoami.middlewares=whoami-demo"
+      # Add a test header to all incoming requests:
+      # (the presense of this header in whoami response shows if the plugin works:)
+      - "traefik.http.middlewares.whoami-demo.plugin.${PLUGIN_NAME}.header.name=sss"
+      - "traefik.http.middlewares.whoami-demo.plugin.${PLUGIN_NAME}.header.key=1244"
+      - "traefik.http.routers.whoami.tls.certresolver=default"
