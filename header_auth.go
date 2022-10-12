@@ -26,6 +26,7 @@ type HeaderAuth struct {
 }
 
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
+	fmt.Printf("Creating plugin: %s instance: %+v, ctx: %+v\n", name, *config, ctx)
 	if len(config.Header) == 0 {
 		return nil, fmt.Errorf("headers cannot be empty")
 	}
@@ -42,6 +43,7 @@ func (a *HeaderAuth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		fmt.Println("SUCCESS")
 		req.Header.Del(a.header["name"])
 		a.next.ServeHTTP(rw, req)
+		return
 	}
 	fmt.Println("FAILED")
 	http.Error(rw, "Not allowed - verified null", http.StatusUnauthorized)
