@@ -37,9 +37,13 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (a *HeaderAuth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	fmt.Println("a.header " + a.header["name"])
 	if req.Header.Get(a.header["name"]) == a.header["key"] {
+		fmt.Println("SUCCESS")
 		req.Header.Del(a.header["name"])
 		a.next.ServeHTTP(rw, req)
 	}
+	fmt.Println("FAILED")
 	http.Error(rw, "Not allowed - verified null", http.StatusUnauthorized)
+
 }

@@ -60,6 +60,6 @@ services:
       - "traefik.http.routers.whoami.middlewares=whoami-demo"
       # Add a test header to all incoming requests:
       # (the presense of this header in whoami response shows if the plugin works:)
-      - "traefik.http.middlewares.whoami-demo.plugin.${PLUGIN_NAME}.header.name=sss"
+      - "traefik.http.middlewares.whoami-demo.plugin.${PLUGIN_NAME}.header.name=X-API-KEY"
       - "traefik.http.middlewares.whoami-demo.plugin.${PLUGIN_NAME}.header.key=1244"
       - "traefik.http.routers.whoami.tls.certresolver=default"
