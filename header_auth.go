@@ -2,6 +2,7 @@ package headerauthentication
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -9,6 +10,11 @@ import (
 // Config the plugin configuration.
 type Config struct {
 	Header map[string]string `json:"header,omitempty"`
+}
+
+// ErrorResponse represents the response when the API key is invalid .
+type ErrorResponse struct {
+	ErrorCode string `json:"error_code"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -38,14 +44,15 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (a *HeaderAuth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("a.header " + a.header["name"])
 	if req.Header.Get(a.header["name"]) == a.header["key"] {
-		fmt.Println("SUCCESS")
 		req.Header.Del(a.header["name"])
 		a.next.ServeHTTP(rw, req)
 		return
 	}
-	fmt.Println("FAILED")
-	http.Error(rw, "Not allowed - verified null", http.StatusUnauthorized)
-
+	response := ErrorResponse{ErrorCode: "Invalid API Key"}
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	rw.WriteHeader(403)
+	if err := json.NewEncoder(rw).Encode(response); err != nil {
+		fmt.Println("Failed to reply request with invalid API Key: " + err.Error())
+	}
 }
